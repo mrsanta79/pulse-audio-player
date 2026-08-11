@@ -1,0 +1,71 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/coverage/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# Build outputs, anywhere in the tree. `/build/` above only covers the root, so
+# `android/app/build/` and any other nested output directory would slip through.
+**/build/
+/android/.gradle/
+/android/captures/
+
+# Packaged and intermediate app artifacts. These are the files `flutter build`
+# produces under build/, but they are also easy to copy elsewhere in the tree
+# when sharing a test build, so match them by extension too.
+*.apk
+*.aab
+*.apks
+*.aar
+*.ap_
+*.dex
+
+# Signing material. A committed keystore lets anyone ship an update signed as
+# you, and it cannot be un-published once pushed.
+*.jks
+*.keystore
+key.properties
+
+# Local machine paths (SDK locations), different on every checkout.
+.flutter-plugins
+android/local.properties
