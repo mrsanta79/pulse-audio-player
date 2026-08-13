@@ -83,25 +83,33 @@ class _LibrarySearchScaffoldState<T> extends State<LibrarySearchScaffold<T>> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          if (_searching)
-            SearchField(
-              autofocus: true,
-              hintText: widget.hintText,
-              onChanged: (value) => setState(() => _query = value.trim()),
+      // Sides only: the app bar already clears the status bar, and the lists
+      // end with `bottomGap` so they clear the floating nav. What is left is
+      // the gesture bar, which sits on a side edge in landscape and would
+      // otherwise cut into the content.
+      body: SafeArea(
+        top: false,
+        bottom: false,
+        child: Column(
+          children: [
+            if (_searching)
+              SearchField(
+                autofocus: true,
+                hintText: widget.hintText,
+                onChanged: (value) => setState(() => _query = value.trim()),
+              ),
+            Expanded(
+              child: filtered.isEmpty && _query.isNotEmpty
+                  ? Center(
+                      child: Text(
+                        widget.noMatchesMessage,
+                        style: TextStyle(color: palette.textSecondary),
+                      ),
+                    )
+                  : widget.builder(context, filtered),
             ),
-          Expanded(
-            child: filtered.isEmpty && _query.isNotEmpty
-                ? Center(
-                    child: Text(
-                      widget.noMatchesMessage,
-                      style: TextStyle(color: palette.textSecondary),
-                    ),
-                  )
-                : widget.builder(context, filtered),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
