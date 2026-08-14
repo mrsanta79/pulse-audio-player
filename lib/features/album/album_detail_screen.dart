@@ -73,48 +73,55 @@ class _AlbumDetailScreenState extends ConsumerState<AlbumDetailScreen> {
           ),
         ],
       ),
-      body: tracks.isEmpty && tracksAsync.hasValue
-          ? Center(
-              child: Text(
-                'No tracks',
-                style: TextStyle(color: palette.textSecondary),
-              ),
-            )
-          : CustomScrollView(
-              slivers: [
-                SliverToBoxAdapter(
-                  child: AlbumHeader(
-                    album: widget.album,
-                    artist: widget.artist,
-                    tracks: tracks,
-                    allLiked: allLiked,
-                  ),
+      // Sides only, as on the library pages: the app bar handles the top and
+      // the track list's `bottomGap` handles the bottom, but the gesture bar
+      // moves to a side edge in landscape and would clip the header art.
+      body: SafeArea(
+        top: false,
+        bottom: false,
+        child: tracks.isEmpty && tracksAsync.hasValue
+            ? Center(
+                child: Text(
+                  'No tracks',
+                  style: TextStyle(color: palette.textSecondary),
                 ),
-                SliverToBoxAdapter(child: _PlayActions(tracks: filtered)),
-                if (_searching)
+              )
+            : CustomScrollView(
+                slivers: [
                   SliverToBoxAdapter(
-                    child: SearchField(
-                      autofocus: true,
-                      hintText: 'Search this album',
-                      onChanged: (value) =>
-                          setState(() => _query = value.trim()),
+                    child: AlbumHeader(
+                      album: widget.album,
+                      artist: widget.artist,
+                      tracks: tracks,
+                      allLiked: allLiked,
                     ),
                   ),
-                if (filtered.isEmpty)
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 32),
-                      child: Text(
-                        'No songs match',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: palette.textSecondary),
+                  SliverToBoxAdapter(child: _PlayActions(tracks: filtered)),
+                  if (_searching)
+                    SliverToBoxAdapter(
+                      child: SearchField(
+                        autofocus: true,
+                        hintText: 'Search this album',
+                        onChanged: (value) =>
+                            setState(() => _query = value.trim()),
                       ),
                     ),
-                  )
-                else
-                  _AlbumTrackList(tracks: filtered),
-              ],
-            ),
+                  if (filtered.isEmpty)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 32),
+                        child: Text(
+                          'No songs match',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: palette.textSecondary),
+                        ),
+                      ),
+                    )
+                  else
+                    _AlbumTrackList(tracks: filtered),
+                ],
+              ),
+      ),
     );
   }
 }

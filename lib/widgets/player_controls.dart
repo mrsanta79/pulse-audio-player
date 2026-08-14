@@ -1,4 +1,6 @@
-import 'package:flutter/material.dart';
+// Flutter's own `RepeatMode` (repeating_animation_builder) collides with the
+// player's; this file means the player's.
+import 'package:flutter/material.dart' hide RepeatMode;
 
 import '../core/theme/app_theme.dart';
 import '../data/services/audio_player_service.dart';

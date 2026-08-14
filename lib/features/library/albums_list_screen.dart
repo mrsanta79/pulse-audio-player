@@ -14,6 +14,11 @@ class AlbumsListScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final albums = ref.watch(albumsProvider).valueOrNull ?? const [];
+    // Landscape is short and wide: two columns there would put a single row of
+    // tall tiles on screen, both of them cut off. Four narrower columns fit a
+    // full row with the next one peeking, which also reads as scrollable.
+    final columns =
+        MediaQuery.orientationOf(context) == Orientation.landscape ? 4 : 2;
 
     return LibrarySearchScaffold<AlbumSummary>(
       title: 'Albums',
@@ -23,8 +28,8 @@ class AlbumsListScreen extends ConsumerWidget {
       noMatchesMessage: 'No albums match',
       builder: (context, filtered) => GridView.builder(
         padding: AppSpacing.listPaddingBelowHeader,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: columns,
           mainAxisSpacing: 16,
           crossAxisSpacing: 16,
           childAspectRatio: 0.78,

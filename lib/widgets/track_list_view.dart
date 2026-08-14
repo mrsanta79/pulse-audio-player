@@ -42,19 +42,26 @@ class TrackListView extends StatelessWidget {
       );
     }
 
-    return ListView.builder(
-      padding: AppSpacing.listPadding,
-      itemCount: tracks.length,
-      itemBuilder: (context, index) {
-        final track = tracks[index];
-        return TrackTile(
-          tracks: tracks,
-          index: index,
-          subtitle: subtitle?.call(track),
-          trailing: trailing?.call(track),
-          showArtwork: showArtwork,
-        );
-      },
+    // Sides only: the pages using this list have an app bar for the top, and
+    // `listPadding` ends with `bottomGap`. The sides matter in landscape,
+    // where the gesture bar sits on one of them.
+    return SafeArea(
+      top: false,
+      bottom: false,
+      child: ListView.builder(
+        padding: AppSpacing.listPadding,
+        itemCount: tracks.length,
+        itemBuilder: (context, index) {
+          final track = tracks[index];
+          return TrackTile(
+            tracks: tracks,
+            index: index,
+            subtitle: subtitle?.call(track),
+            trailing: trailing?.call(track),
+            showArtwork: showArtwork,
+          );
+        },
+      ),
     );
   }
 }
