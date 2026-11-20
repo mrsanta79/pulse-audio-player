@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 import '../../core/utils/storage_path.dart';
 import '../database/app_database.dart';
 import 'metadata_service.dart';
+import 'openrouter_mood_service.dart';
 
 class ScanProgress {
   final int scanned;
@@ -44,7 +45,7 @@ class FolderScannerService {
   static const _writeBatchSize = 50;
 
   Future<List<File>> collectAudioFiles(List<String> folderPaths) async {
-    final files = <File>[];
+    final filesByPath = <String, File>{};
     for (final rawPath in folderPaths) {
       // Guard against any SAF content URIs that were stored before conversion.
       final folderPath = resolvePickedDirectoryPath(rawPath);
@@ -55,31 +56,70 @@ class FolderScannerService {
         followLinks: false,
       )) {
         if (entity is! File) continue;
-        if (audioExtensions.contains(p.extension(entity.path).toLowerCase())) {
-          files.add(entity);
+        if (!audioExtensions.contains(p.extension(entity.path).toLowerCase())) {
+          continue;
         }
+        final canonicalPath = await _canonicalPath(entity.path);
+        filesByPath.putIfAbsent(canonicalPath, () => File(canonicalPath));
       }
     }
-    return files;
+    return filesByPath.values.toList();
+  }
+
+  Future<String> _canonicalPath(String path) async {
+    if (path.startsWith('content://')) return path;
+    try {
+      return await File(path).resolveSymbolicLinks();
+    } on FileSystemException {
+      return p.normalize(p.absolute(path));
+    }
   }
 
   Stream<ScanProgress> scanFolders(List<String> folderPaths) async* {
-    final resolvedPaths = folderPaths.map(resolvePickedDirectoryPath).toList();
+    final resolvedPaths = await Future.wait<String>(
+      folderPaths.map((path) async {
+        final resolved = resolvePickedDirectoryPath(path);
+        if (resolved.startsWith('content://')) return resolved;
+        try {
+          return await Directory(resolved).resolveSymbolicLinks();
+        } on FileSystemException {
+          return p.normalize(p.absolute(resolved));
+        }
+      }),
+    );
     final files = await collectAudioFiles(resolvedPaths);
-    final total = files.length;
+    final filesByFilename = <String, List<File>>{};
+    for (final file in files) {
+      filesByFilename.putIfAbsent(_filenameKey(file.path), () => []).add(file);
+    }
 
     // One query instead of one per file: the old code asked the database
-    // whether each path was already known, which is a round trip per track.
+    // whether each path was already known, which was a round trip per track.
     // Only the two columns needed, so a large library doesn't pull every tag
     // it already has into memory.
     final knownIds = await _trackIdsByPath();
+    final selectedFiles = <String, File>{};
+    for (final entry in filesByFilename.entries) {
+      final candidates = entry.value..sort((a, b) => a.path.compareTo(b.path));
+      selectedFiles[entry.key] = candidates.firstWhere(
+        (candidate) => knownIds.containsKey(candidate.path),
+        orElse: () => candidates.first,
+      );
+    }
+    final knownIdsByFilename = await _mergeDuplicateFilenameTracks(
+      knownIds,
+      filesByFilename,
+      selectedFiles,
+    );
 
+    final total = selectedFiles.length;
     var scanned = 0;
-    final seenPaths = <String>{};
+    final seenPaths = files.map((file) => file.path).toSet();
     var pending = <_ScannedTrack>[];
 
-    for (final file in files) {
-      seenPaths.add(file.path);
+    for (final entry in selectedFiles.entries) {
+      final filename = entry.key;
+      final file = entry.value;
       yield ScanProgress(
         scanned: scanned,
         total: total,
@@ -92,7 +132,7 @@ class FolderScannerService {
           path: file.path,
           meta: meta,
           artHash: _metadata.hashAlbumArt(meta.albumArt),
-          existingId: knownIds[file.path],
+          existingId: knownIdsByFilename[filename],
         ),
       );
 
@@ -110,10 +150,8 @@ class FolderScannerService {
     }
 
     if (pending.isNotEmpty) await _writeBatch(pending);
-    // `knownIds` is the library as it was before this scan; anything added
-    // during it is in `seenPaths`, so it is the right set to check for files
-    // that have gone away.
     await _removeVanishedTracks(knownIds, resolvedPaths, seenPaths);
+    await _mergeDuplicateMetadataTracks(resolvedPaths);
 
     yield ScanProgress(scanned: scanned, total: total, done: true);
   }
@@ -125,10 +163,167 @@ class FolderScannerService {
           readsFrom: {_db.tracks},
         )
         .get();
-    return {
-      for (final row in rows)
-        row.read<String>('file_path'): row.read<int>('id'),
-    };
+    final idsByPath = <String, List<int>>{};
+    for (final row in rows) {
+      final id = row.read<int>('id');
+      final path = await _canonicalPath(row.read<String>('file_path'));
+      idsByPath.putIfAbsent(path, () => []).add(id);
+    }
+
+    final result = <String, int>{};
+    for (final entry in idsByPath.entries) {
+      final ids = entry.value;
+      final survivorId = ids.first;
+      if (ids.length > 1) {
+        await _mergeDuplicateTracks(survivorId, ids.skip(1).toList());
+      }
+      await (_db.update(_db.tracks)..where((t) => t.id.equals(survivorId)))
+          .write(TracksCompanion(filePath: Value(entry.key)));
+      result[entry.key] = survivorId;
+    }
+    return result;
+  }
+
+  String _filenameKey(String path) =>
+      p.basenameWithoutExtension(path).toLowerCase();
+
+  bool _isInFolders(String path, List<String> resolvedPaths) {
+    return resolvedPaths.any((folder) {
+      final prefix = folder.endsWith('/') ? folder : '$folder/';
+      return path.startsWith(prefix);
+    });
+  }
+
+  Future<Map<String, int>> _mergeDuplicateFilenameTracks(
+    Map<String, int> knownIds,
+    Map<String, List<File>> filesByFilename,
+    Map<String, File> selectedFiles,
+  ) async {
+    final result = <String, int>{};
+    for (final entry in filesByFilename.entries) {
+      final filePaths = entry.value.map((file) => file.path).toSet();
+      final ids = [
+        for (final path in filePaths) ?knownIds[path],
+      ].whereType<int>().toList();
+      if (ids.isEmpty) continue;
+
+      final survivorPath = selectedFiles[entry.key]!.path;
+      final survivorId = knownIds[survivorPath];
+      if (survivorId == null) continue;
+      final duplicateIds = ids.where((id) => id != survivorId).toList();
+      if (duplicateIds.isNotEmpty) {
+        await _mergeDuplicateTracks(survivorId, duplicateIds);
+        knownIds.removeWhere(
+          (path, id) => filePaths.contains(path) && id != survivorId,
+        );
+      }
+      result[entry.key] = survivorId;
+    }
+    return result;
+  }
+
+  String _normalizeMetadataValue(String value) =>
+      value.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+
+  Future<void> _mergeDuplicateMetadataTracks(List<String> resolvedPaths) async {
+    final tracks = await _db.select(_db.tracks).get();
+    final idsByMetadata = <(String, String, int), List<int>>{};
+    for (final track in tracks) {
+      if (!_isInFolders(track.filePath, resolvedPaths)) continue;
+      final duration = track.durationMs;
+      if (duration == null) continue;
+      final key = (
+        _normalizeMetadataValue(track.title),
+        _normalizeMetadataValue(track.artist),
+        duration,
+      );
+      idsByMetadata.putIfAbsent(key, () => []).add(track.id);
+    }
+
+    for (final ids in idsByMetadata.values) {
+      if (ids.length > 1) {
+        await _mergeDuplicateTracks(ids.first, ids.skip(1).toList());
+      }
+    }
+  }
+
+  Future<void> _mergeDuplicateTracks(int survivorId, List<int> duplicateIds) {
+    return _db.transaction(() async {
+      for (final duplicateId in duplicateIds) {
+        await _db.customStatement(
+          '''
+          INSERT OR IGNORE INTO likes (track_id, liked_at)
+          SELECT ?, liked_at FROM likes WHERE track_id = ?
+          ''',
+          [survivorId, duplicateId],
+        );
+        await _db.customStatement(
+          '''
+          UPDATE likes
+          SET liked_at = (
+            SELECT MAX(liked_at) FROM likes WHERE track_id IN (?, ?)
+          )
+          WHERE track_id = ?
+          ''',
+          [survivorId, duplicateId, survivorId],
+        );
+        await _db.customStatement(
+          '''
+          INSERT INTO playlist_tracks (playlist_id, track_id, position)
+          SELECT source.playlist_id, ?, source.position
+          FROM playlist_tracks source
+          WHERE source.track_id = ?
+            AND NOT EXISTS (
+              SELECT 1 FROM playlist_tracks existing
+              WHERE existing.playlist_id = source.playlist_id
+                AND existing.track_id = ?
+            )
+          ''',
+          [survivorId, duplicateId, survivorId],
+        );
+        await _db.customStatement(
+          'DELETE FROM playlist_tracks WHERE track_id = ?',
+          [duplicateId],
+        );
+        await _db.customStatement(
+          '''
+          INSERT OR IGNORE INTO track_moods (track_id, mood)
+          SELECT ?, mood FROM track_moods WHERE track_id = ?
+          ''',
+          [survivorId, duplicateId],
+        );
+        await _db.customStatement(
+          '''
+          INSERT OR IGNORE INTO track_mood_analysis (track_id, metadata_hash)
+          SELECT ?, metadata_hash FROM track_mood_analysis WHERE track_id = ?
+          ''',
+          [survivorId, duplicateId],
+        );
+        await (_db.delete(
+          _db.tracks,
+        )..where((t) => t.id.equals(duplicateId))).go();
+      }
+
+      final session = await (_db.select(
+        _db.playbackSessions,
+      )..where((s) => s.id.equals(0))).getSingleOrNull();
+      if (session != null) {
+        final duplicateIdSet = duplicateIds.toSet();
+        final queueIds = session.queueTrackIds
+            .split(',')
+            .map((value) => int.tryParse(value.trim()))
+            .whereType<int>()
+            .map((id) => duplicateIdSet.contains(id) ? survivorId : id)
+            .toList();
+        await _db
+            .update(_db.playbackSessions)
+            .write(
+              PlaybackSessionsCompanion(
+                queueTrackIds: Value(queueIds.join(',')),
+              ),
+            );
+      }
+    });
   }
 
   Future<void> _writeBatch(List<_ScannedTrack> batch) {
@@ -170,14 +365,9 @@ class FolderScannerService {
     List<String> resolvedPaths,
     Set<String> seenPaths,
   ) async {
-    final prefixes = [
-      for (final folder in resolvedPaths)
-        folder.endsWith('/') ? folder : '$folder/',
-    ];
-
     final stale = <int>[];
     knownIds.forEach((path, id) {
-      if (!prefixes.any(path.startsWith)) return;
+      if (!_isInFolders(path, resolvedPaths)) return;
       if (!seenPaths.contains(path) || !File(path).existsSync()) {
         stale.add(id);
       }
