@@ -20,6 +20,8 @@ void main() {
         '/album',
         '/library/artists',
         '/library/songs',
+        '/library/moods',
+        '/mood',
         '/artist',
         '/year',
         '/likes',

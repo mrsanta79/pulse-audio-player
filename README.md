@@ -1,6 +1,6 @@
 # Pulse
 
-A minimal, offline Android music player built with Flutter. It scans folders you pick, reads tags straight off the files, and plays them with a media notification and background playback. No accounts, no network, no algorithm.
+A minimal Android music player built with Flutter. It scans folders you pick, reads tags straight off the files, and plays them with a media notification and background playback. Playback and library browsing stay local; optional mood categorization sends song metadata to OpenRouter when you configure it.
 
 - **Package**: `com.pulse.audio_player`
 - **Platform**: Android only (no `ios/`, `web/`, or desktop targets in this repo)
@@ -29,7 +29,10 @@ A minimal, offline Android music player built with Flutter. It scans folders you
 **Library**
 - Folder-based scanning: only the folders you add are imported, nothing else on the device is touched
 - Tags read with `audiotags`, filename used as the title fallback
-- Browse by artist, album, year, or all songs
+- Browse by artist, album, year, mood, or all songs
+- Optional Mood AI sorts songs into a built-in mood catalog after a scan; only new or changed metadata is categorized
+- Categorize moods separately from scanning, so retrying or filling in mood labels doesn't reread all music files
+- OpenRouter model is configurable (defaults to `google/gemma-4-31b-it:free`); its API key is stored securely on device
 - Album art extracted from tags, deduplicated by content hash, stored once and shared across tracks
 - Rescan updates changed tags and drops tracks whose files disappeared from a scanned folder
 - Supported extensions: `.mp3`, `.flac`, `.m4a`, `.ogg`, `.wav`, `.aac`, `.opus`
@@ -114,9 +117,11 @@ flutter run
 2. Open **Settings** (the gear icon on Home or Library).
 3. Tap **Add folder**. Grant **All files access** when Android asks: the picker opens once the permission is granted.
 4. Pick a folder containing music. The scan starts automatically and reports progress.
-5. Tap **Rescan** any time after adding or changing files.
+5. To enable mood categories, open **Settings → Mood categories**, enter an OpenRouter API key, and save. The model defaults to `google/gemma-4-31b-it:free` and can be changed there.
+6. Tap **Rescan** after adding or changing files. The app scans first, then categorizes new or changed songs by mood. Without a key, the scan still completes and categorization is skipped.
+7. Use **Categorize moods** to categorize pending songs without rereading files or rescanning folders.
 
-Everything else follows from there: Home shows recent albums, Library browses by artist/album/year/song, Search queries the whole library, and Hotlist holds liked songs and playlists.
+Everything else follows from there: Home shows recent albums, Library browses by artist/album/year/mood/song, Search queries the whole library, and Hotlist holds liked songs and playlists. Mood categorization sends song title, artist, album, year, duration, and track number to OpenRouter; it does not send local file paths or artwork.
 
 To remove a folder, open **Settings** and delete it from the **Music folders** list. Tracks under that folder stay in the library until the next rescan.
 
@@ -198,6 +203,8 @@ What the suite covers:
 | `playlist_membership_test.dart` | The add-to-playlist sheet: per-playlist membership counts, partial album adds, and removals |
 | `theme_test.dart` | Theme resolution, storage-key round trips, persistence, and the appearance settings UI |
 | `library_search_test.dart` | In-list search: toggling, multi-term matching, empty results, and restoring the full list |
+| `mood_library_test.dart` | Mood assignment persistence, grouping, and mood browsing UI |
+| `openrouter_mood_service_test.dart` | OpenRouter model config, request shape, stable metadata categorization, and retryable errors |
 | `album_search_test.dart` | Album list filtering |
 | `router_test.dart` | Full-screen routes resolving on the root navigator |
 | `storage_path_test.dart` | SAF tree URI to filesystem path conversion |
@@ -246,13 +253,13 @@ android/                       # Android host project, manifest, Gradle config
 4. `runApp`
 5. Restore the last playback session after the first frame, so startup is not blocked on reading the queue
 
-**Scanning**: `FolderScannerService` walks each folder recursively, reads tags per file, and writes in transactions of 50 tracks. Batching is deliberate: one transaction per file spends most of its time in `fsync`, while one transaction for the whole library would lose everything if the scan were interrupted. Existing paths are fetched in a single query rather than one round trip per file. It emits a `ScanProgress` stream that the settings screen renders as a progress bar.
+**Scanning**: `FolderScannerService` walks each folder recursively, reads tags per file, and writes in transactions of 50 tracks. Batching is deliberate: one transaction per file spends most of its time in `fsync`, while one transaction for the whole library would lose everything if the scan were interrupted. Existing paths are fetched in a single query rather than one round trip per file. During a scan, duplicate library rows are merged while preserving likes, playlists, moods, and queue references. Files with the same case-insensitive basename (ignoring extension) are treated as duplicates, as are tracks whose normalized title, artist, and exact duration match; metadata matching is limited to the scanned folders and skips tracks without a duration. Matching files on disk are **not deleted**. It emits a `ScanProgress` stream that the settings screen renders as a progress bar. After a successful scan, optional Mood AI categorizes changed/new metadata in batches of ten and reports separate progress. A separate **Categorize moods** action runs that pass against the existing database without walking the music folders. If OpenRouter is unavailable, existing assignments remain and retrying categorization processes the songs that are still pending.
 
 ---
 
 ## Database
 
-Drift over SQLite, stored at `<app documents>/pulse_music.sqlite`. Current schema version: **4**.
+Drift over SQLite, stored at `<app documents>/pulse_music.sqlite`. Current schema version: **5**.
 
 | Table | Purpose |
 | --- | --- |
@@ -263,10 +270,12 @@ Drift over SQLite, stored at `<app documents>/pulse_music.sqlite`. Current schem
 | `playlists` / `playlist_tracks` | User playlists and their ordered members, both cascading |
 | `playback_sessions` | Single row (id 0) holding the resume point: queue, index, position, repeat, shuffle |
 | `preferences` | Generic key/value store for small settings, so a new preference needs no schema bump |
+| `track_moods` | Mood labels assigned to tracks, cascading when a track is removed |
+| `track_mood_analysis` | Metadata/model fingerprint for retrying only uncategorized or changed songs |
 
 Indexes cover the browse and sort paths: `(album, artist)`, `artist`, `year`, `title` on tracks, `liked_at` on likes, and `(playlist_id, position)` plus `track_id` on playlist entries.
 
-Migrations are additive: v2 added `playback_sessions`, v3 added `preferences`, v4 created the indexes. Index creation is re-runnable (`CREATE INDEX IF NOT EXISTS`), so a half-finished upgrade cannot leave the app unable to open its database. `PRAGMA foreign_keys = ON` is set on every connection in `beforeOpen`, since SQLite ignores the declared cascades without it.
+Migrations are additive: v2 added `playback_sessions`, v3 added `preferences`, v4 created the indexes, and v5 added mood assignments and analysis fingerprints. Index creation is re-runnable (`CREATE INDEX IF NOT EXISTS`), so a half-finished upgrade cannot leave the app unable to open its database. `PRAGMA foreign_keys = ON` is set on every connection in `beforeOpen`, since SQLite ignores the declared cascades without it.
 
 After editing the schema, bump `schemaVersion`, add the migration step, and regenerate:
 

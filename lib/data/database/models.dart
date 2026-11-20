@@ -19,6 +19,20 @@ class AlbumSummary {
 
 /// A restored playback session, with the queue already resolved to tracks that
 /// still exist in the library.
+class MoodCount {
+  const MoodCount(this.mood, this.count);
+
+  final String mood;
+  final int count;
+
+  @override
+  bool operator ==(Object other) =>
+      other is MoodCount && other.mood == mood && other.count == count;
+
+  @override
+  int get hashCode => Object.hash(mood, count);
+}
+
 class SavedPlaybackSession {
   final List<Track> tracks;
   final int currentIndex;

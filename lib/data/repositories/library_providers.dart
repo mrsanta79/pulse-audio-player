@@ -14,6 +14,10 @@ final allTracksProvider = StreamProvider<List<Track>>((ref) {
   return ref.watch(databaseProvider).watchAllTracks();
 });
 
+final recentlyAddedTracksProvider = StreamProvider<List<Track>>((ref) {
+  return ref.watch(databaseProvider).watchRecentlyAddedTracks(limit: 50);
+});
+
 final likedTracksProvider = StreamProvider<List<Track>>((ref) {
   return ref.watch(databaseProvider).watchLikedTracks();
 });
@@ -43,6 +47,13 @@ final yearsProvider = FutureProvider<List<int>>((ref) async {
   return ref.watch(databaseProvider).getYears();
 });
 
+final moodCountsProvider = StreamProvider<List<MoodCount>>((ref) {
+  return ref.watch(databaseProvider).watchMoodCounts();
+});
+
+final moodCategorizationStatusProvider =
+    StateProvider<({String message, bool isError})?>((ref) => null);
+
 // Detail-screen track lists.
 //
 // These are streams rather than futures started from `build`: a `FutureBuilder`
@@ -68,6 +79,11 @@ final yearTracksProvider = StreamProvider.autoDispose.family<List<Track>, int>((
 ) {
   return ref.watch(databaseProvider).watchTracksByYear(year);
 });
+
+final moodTracksProvider = StreamProvider.autoDispose
+    .family<List<Track>, String>((ref, mood) {
+      return ref.watch(databaseProvider).watchTracksByMood(mood);
+    });
 
 final playlistTracksProvider = StreamProvider.autoDispose
     .family<List<Track>, int>((ref, playlistId) {

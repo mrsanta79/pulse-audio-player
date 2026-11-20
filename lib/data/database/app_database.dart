@@ -14,9 +14,9 @@ export 'queries/session_queries.dart';
 
 part 'app_database.g.dart';
 
-// The library is browsed by album, artist and year, and listed by title. Every
-// one of those is a full scan + sort without an index, which is what makes a
-// few-thousand-track library feel slow on a phone.
+// The library is browsed by album, artist, year, and title. Every one of those
+// is a full scan + sort without an index, which is what makes a few-thousand-
+// track library feel slow on a phone.
 @TableIndex(name: 'tracks_album_artist', columns: {#album, #artist})
 @TableIndex(name: 'tracks_artist', columns: {#artist})
 @TableIndex(name: 'tracks_year', columns: {#year})
@@ -41,6 +41,24 @@ class AlbumArt extends Table {
 
   @override
   Set<Column> get primaryKey => {hash};
+}
+
+class TrackMoodAnalysis extends Table {
+  IntColumn get trackId =>
+      integer().references(Tracks, #id, onDelete: KeyAction.cascade)();
+  TextColumn get metadataHash => text()();
+
+  @override
+  Set<Column> get primaryKey => {trackId};
+}
+
+class TrackMoods extends Table {
+  IntColumn get trackId =>
+      integer().references(Tracks, #id, onDelete: KeyAction.cascade)();
+  TextColumn get mood => text()();
+
+  @override
+  Set<Column> get primaryKey => {trackId, mood};
 }
 
 class ScanFolders extends Table {
@@ -112,6 +130,8 @@ class Preferences extends Table {
     PlaylistTracks,
     PlaybackSessions,
     Preferences,
+    TrackMoodAnalysis,
+    TrackMoods,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -120,7 +140,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -134,6 +154,10 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 4) {
         await _createIndexes(m);
+      }
+      if (from < 5) {
+        await m.createTable(trackMoodAnalysis);
+        await m.createTable(trackMoods);
       }
     },
     beforeOpen: (details) async {
