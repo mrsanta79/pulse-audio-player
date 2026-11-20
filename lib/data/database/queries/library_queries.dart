@@ -2,8 +2,7 @@ import 'package:drift/drift.dart';
 
 import '../app_database.dart';
 
-/// Reads over the scanned library: tracks, the album/artist/year groupings the
-/// Library tab is built from, likes, and album artwork.
+/// Reads tracks, their album/artist/year/mood groupings, likes, and artwork.
 ///
 /// The `watch*` variants are what screens should use. A `Future` query started
 /// from a `build` method re-runs on every rebuild; a stream is subscribed once
@@ -43,6 +42,82 @@ extension LibraryQueries on AppDatabase {
         (t) => OrderingTerm.asc(t.trackNumber),
       ]);
   }
+
+  Future<Map<int, String>> getTrackMoodHashes() async {
+    final rows = await select(trackMoodAnalysis).get();
+    return {for (final row in rows) row.trackId: row.metadataHash};
+  }
+
+  Future<List<int>> getTrackIdsWithoutMoods() async {
+    final rows = await customSelect(
+      '''
+      SELECT t.id FROM tracks t
+      LEFT JOIN track_mood_analysis a ON a.track_id = t.id
+      WHERE a.track_id IS NULL OR NOT EXISTS (
+        SELECT 1 FROM track_moods tm WHERE tm.track_id = t.id
+      )
+      ''',
+      readsFrom: {tracks, trackMoodAnalysis},
+    ).get();
+    return [for (final row in rows) row.read<int>('id')];
+  }
+
+  Future<void> saveTrackMoods(
+    int trackId,
+    String metadataHash,
+    List<String> moods,
+  ) async {
+    await transaction(() async {
+      await (delete(
+        trackMoods,
+      )..where((mood) => mood.trackId.equals(trackId))).go();
+      await batch((b) {
+        if (moods.isNotEmpty) {
+          b.insertAll(trackMoods, [
+            for (final mood in moods)
+              TrackMoodsCompanion.insert(trackId: trackId, mood: mood),
+          ], mode: InsertMode.insertOrIgnore);
+        }
+        b.insert(
+          trackMoodAnalysis,
+          TrackMoodAnalysisCompanion.insert(
+            trackId: Value(trackId),
+            metadataHash: metadataHash,
+          ),
+          mode: InsertMode.insertOrReplace,
+        );
+      });
+    });
+  }
+
+  Future<List<MoodCount>> getMoodCounts() async {
+    final rows = await customSelect(
+      'SELECT mood, COUNT(*) AS song_count FROM track_moods GROUP BY mood ORDER BY mood',
+      readsFrom: {trackMoods},
+    ).get();
+    return _moodCountsFromRows(rows);
+  }
+
+  Stream<List<MoodCount>> watchMoodCounts() => customSelect(
+    'SELECT mood, COUNT(*) AS song_count FROM track_moods GROUP BY mood ORDER BY mood',
+    readsFrom: {trackMoods},
+  ).watch().map(_moodCountsFromRows);
+
+  List<MoodCount> _moodCountsFromRows(List<QueryRow> rows) => [
+    for (final row in rows)
+      MoodCount(row.read<String>('mood'), row.read<int>('song_count')),
+  ];
+
+  Stream<List<Track>> watchTracksByMood(String mood) => customSelect(
+    '''
+    SELECT t.* FROM tracks t
+    INNER JOIN track_moods tm ON tm.track_id = t.id
+    WHERE tm.mood = ?
+    ORDER BY lower(t.title) ASC
+    ''',
+    variables: [Variable.withString(mood)],
+    readsFrom: {tracks, trackMoods},
+  ).map((row) => tracks.map(row.data)).watch();
 
   Stream<List<Track>> watchTracksByYear(int year) => _byYear(year).watch();
 

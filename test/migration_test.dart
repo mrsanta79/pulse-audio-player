@@ -25,7 +25,9 @@ void main() {
   /// release: schema 2, with no preferences table.
   Future<void> writeV2Database() async {
     final db = AppDatabase.forTesting(NativeDatabase(file));
-    await db.customStatement('DROP TABLE preferences');
+    await db.customStatement('DROP TABLE IF EXISTS track_moods');
+    await db.customStatement('DROP TABLE IF EXISTS track_mood_analysis');
+    await db.customStatement('DROP TABLE IF EXISTS preferences');
     await db.customStatement('PRAGMA user_version = 2');
     // Some real user data, to prove the migration preserves it.
     await db
@@ -56,6 +58,18 @@ void main() {
 
     final tracks = await db.getAllTracks();
     expect(tracks.map((t) => t.title), ['Keeper']);
+  });
+
+  test('upgrading creates mood tables and keeps track data', () async {
+    await writeV2Database();
+
+    final db = AppDatabase.forTesting(NativeDatabase(file));
+    addTearDown(db.close);
+
+    final track = (await db.getAllTracks()).single;
+    await db.saveTrackMoods(track.id, 'fingerprint', ['happy']);
+    expect(await db.getMoodCounts(), [const MoodCount('happy', 1)]);
+    expect(await db.getTrackMoodHashes(), {track.id: 'fingerprint'});
   });
 
   test('an upgraded install still loads the default theme', () async {

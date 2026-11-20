@@ -2477,6 +2477,432 @@ class PreferencesCompanion extends UpdateCompanion<Preference> {
   }
 }
 
+class $TrackMoodAnalysisTable extends TrackMoodAnalysis
+    with TableInfo<$TrackMoodAnalysisTable, TrackMoodAnalysi> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TrackMoodAnalysisTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _trackIdMeta = const VerificationMeta(
+    'trackId',
+  );
+  @override
+  late final GeneratedColumn<int> trackId = GeneratedColumn<int>(
+    'track_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES tracks (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _metadataHashMeta = const VerificationMeta(
+    'metadataHash',
+  );
+  @override
+  late final GeneratedColumn<String> metadataHash = GeneratedColumn<String>(
+    'metadata_hash',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [trackId, metadataHash];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'track_mood_analysis';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TrackMoodAnalysi> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('track_id')) {
+      context.handle(
+        _trackIdMeta,
+        trackId.isAcceptableOrUnknown(data['track_id']!, _trackIdMeta),
+      );
+    }
+    if (data.containsKey('metadata_hash')) {
+      context.handle(
+        _metadataHashMeta,
+        metadataHash.isAcceptableOrUnknown(
+          data['metadata_hash']!,
+          _metadataHashMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_metadataHashMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {trackId};
+  @override
+  TrackMoodAnalysi map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TrackMoodAnalysi(
+      trackId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}track_id'],
+      )!,
+      metadataHash: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}metadata_hash'],
+      )!,
+    );
+  }
+
+  @override
+  $TrackMoodAnalysisTable createAlias(String alias) {
+    return $TrackMoodAnalysisTable(attachedDatabase, alias);
+  }
+}
+
+class TrackMoodAnalysi extends DataClass
+    implements Insertable<TrackMoodAnalysi> {
+  final int trackId;
+  final String metadataHash;
+  const TrackMoodAnalysi({required this.trackId, required this.metadataHash});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['track_id'] = Variable<int>(trackId);
+    map['metadata_hash'] = Variable<String>(metadataHash);
+    return map;
+  }
+
+  TrackMoodAnalysisCompanion toCompanion(bool nullToAbsent) {
+    return TrackMoodAnalysisCompanion(
+      trackId: Value(trackId),
+      metadataHash: Value(metadataHash),
+    );
+  }
+
+  factory TrackMoodAnalysi.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TrackMoodAnalysi(
+      trackId: serializer.fromJson<int>(json['trackId']),
+      metadataHash: serializer.fromJson<String>(json['metadataHash']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'trackId': serializer.toJson<int>(trackId),
+      'metadataHash': serializer.toJson<String>(metadataHash),
+    };
+  }
+
+  TrackMoodAnalysi copyWith({int? trackId, String? metadataHash}) =>
+      TrackMoodAnalysi(
+        trackId: trackId ?? this.trackId,
+        metadataHash: metadataHash ?? this.metadataHash,
+      );
+  TrackMoodAnalysi copyWithCompanion(TrackMoodAnalysisCompanion data) {
+    return TrackMoodAnalysi(
+      trackId: data.trackId.present ? data.trackId.value : this.trackId,
+      metadataHash: data.metadataHash.present
+          ? data.metadataHash.value
+          : this.metadataHash,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TrackMoodAnalysi(')
+          ..write('trackId: $trackId, ')
+          ..write('metadataHash: $metadataHash')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(trackId, metadataHash);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TrackMoodAnalysi &&
+          other.trackId == this.trackId &&
+          other.metadataHash == this.metadataHash);
+}
+
+class TrackMoodAnalysisCompanion extends UpdateCompanion<TrackMoodAnalysi> {
+  final Value<int> trackId;
+  final Value<String> metadataHash;
+  const TrackMoodAnalysisCompanion({
+    this.trackId = const Value.absent(),
+    this.metadataHash = const Value.absent(),
+  });
+  TrackMoodAnalysisCompanion.insert({
+    this.trackId = const Value.absent(),
+    required String metadataHash,
+  }) : metadataHash = Value(metadataHash);
+  static Insertable<TrackMoodAnalysi> custom({
+    Expression<int>? trackId,
+    Expression<String>? metadataHash,
+  }) {
+    return RawValuesInsertable({
+      if (trackId != null) 'track_id': trackId,
+      if (metadataHash != null) 'metadata_hash': metadataHash,
+    });
+  }
+
+  TrackMoodAnalysisCompanion copyWith({
+    Value<int>? trackId,
+    Value<String>? metadataHash,
+  }) {
+    return TrackMoodAnalysisCompanion(
+      trackId: trackId ?? this.trackId,
+      metadataHash: metadataHash ?? this.metadataHash,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (trackId.present) {
+      map['track_id'] = Variable<int>(trackId.value);
+    }
+    if (metadataHash.present) {
+      map['metadata_hash'] = Variable<String>(metadataHash.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TrackMoodAnalysisCompanion(')
+          ..write('trackId: $trackId, ')
+          ..write('metadataHash: $metadataHash')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $TrackMoodsTable extends TrackMoods
+    with TableInfo<$TrackMoodsTable, TrackMood> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TrackMoodsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _trackIdMeta = const VerificationMeta(
+    'trackId',
+  );
+  @override
+  late final GeneratedColumn<int> trackId = GeneratedColumn<int>(
+    'track_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES tracks (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _moodMeta = const VerificationMeta('mood');
+  @override
+  late final GeneratedColumn<String> mood = GeneratedColumn<String>(
+    'mood',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [trackId, mood];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'track_moods';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TrackMood> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('track_id')) {
+      context.handle(
+        _trackIdMeta,
+        trackId.isAcceptableOrUnknown(data['track_id']!, _trackIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_trackIdMeta);
+    }
+    if (data.containsKey('mood')) {
+      context.handle(
+        _moodMeta,
+        mood.isAcceptableOrUnknown(data['mood']!, _moodMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_moodMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {trackId, mood};
+  @override
+  TrackMood map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TrackMood(
+      trackId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}track_id'],
+      )!,
+      mood: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}mood'],
+      )!,
+    );
+  }
+
+  @override
+  $TrackMoodsTable createAlias(String alias) {
+    return $TrackMoodsTable(attachedDatabase, alias);
+  }
+}
+
+class TrackMood extends DataClass implements Insertable<TrackMood> {
+  final int trackId;
+  final String mood;
+  const TrackMood({required this.trackId, required this.mood});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['track_id'] = Variable<int>(trackId);
+    map['mood'] = Variable<String>(mood);
+    return map;
+  }
+
+  TrackMoodsCompanion toCompanion(bool nullToAbsent) {
+    return TrackMoodsCompanion(trackId: Value(trackId), mood: Value(mood));
+  }
+
+  factory TrackMood.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TrackMood(
+      trackId: serializer.fromJson<int>(json['trackId']),
+      mood: serializer.fromJson<String>(json['mood']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'trackId': serializer.toJson<int>(trackId),
+      'mood': serializer.toJson<String>(mood),
+    };
+  }
+
+  TrackMood copyWith({int? trackId, String? mood}) =>
+      TrackMood(trackId: trackId ?? this.trackId, mood: mood ?? this.mood);
+  TrackMood copyWithCompanion(TrackMoodsCompanion data) {
+    return TrackMood(
+      trackId: data.trackId.present ? data.trackId.value : this.trackId,
+      mood: data.mood.present ? data.mood.value : this.mood,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TrackMood(')
+          ..write('trackId: $trackId, ')
+          ..write('mood: $mood')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(trackId, mood);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TrackMood &&
+          other.trackId == this.trackId &&
+          other.mood == this.mood);
+}
+
+class TrackMoodsCompanion extends UpdateCompanion<TrackMood> {
+  final Value<int> trackId;
+  final Value<String> mood;
+  final Value<int> rowid;
+  const TrackMoodsCompanion({
+    this.trackId = const Value.absent(),
+    this.mood = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  TrackMoodsCompanion.insert({
+    required int trackId,
+    required String mood,
+    this.rowid = const Value.absent(),
+  }) : trackId = Value(trackId),
+       mood = Value(mood);
+  static Insertable<TrackMood> custom({
+    Expression<int>? trackId,
+    Expression<String>? mood,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (trackId != null) 'track_id': trackId,
+      if (mood != null) 'mood': mood,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  TrackMoodsCompanion copyWith({
+    Value<int>? trackId,
+    Value<String>? mood,
+    Value<int>? rowid,
+  }) {
+    return TrackMoodsCompanion(
+      trackId: trackId ?? this.trackId,
+      mood: mood ?? this.mood,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (trackId.present) {
+      map['track_id'] = Variable<int>(trackId.value);
+    }
+    if (mood.present) {
+      map['mood'] = Variable<String>(mood.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TrackMoodsCompanion(')
+          ..write('trackId: $trackId, ')
+          ..write('mood: $mood, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2490,6 +2916,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     this,
   );
   late final $PreferencesTable preferences = $PreferencesTable(this);
+  late final $TrackMoodAnalysisTable trackMoodAnalysis =
+      $TrackMoodAnalysisTable(this);
+  late final $TrackMoodsTable trackMoods = $TrackMoodsTable(this);
   late final Index tracksAlbumArtist = Index(
     'tracks_album_artist',
     'CREATE INDEX tracks_album_artist ON tracks (album, artist)',
@@ -2531,6 +2960,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     playlistTracks,
     playbackSessions,
     preferences,
+    trackMoodAnalysis,
+    trackMoods,
     tracksAlbumArtist,
     tracksArtist,
     tracksYear,
@@ -2561,6 +2992,20 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('playlist_tracks', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'tracks',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('track_mood_analysis', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'tracks',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('track_moods', kind: UpdateKind.delete)],
     ),
   ]);
 }
@@ -2600,7 +3045,7 @@ final class $$TracksTableReferences
     _$AppDatabase db,
   ) => MultiTypedResultKey.fromTable(
     db.likes,
-    aliasName: $_aliasNameGenerator(db.tracks.id, db.likes.trackId),
+    aliasName: 'tracks__id__likes__track_id',
   );
 
   $$LikesTableProcessedTableManager get likesRefs {
@@ -2618,7 +3063,7 @@ final class $$TracksTableReferences
   static MultiTypedResultKey<$PlaylistTracksTable, List<PlaylistTrack>>
   _playlistTracksRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.playlistTracks,
-    aliasName: $_aliasNameGenerator(db.tracks.id, db.playlistTracks.trackId),
+    aliasName: 'tracks__id__playlist_tracks__track_id',
   );
 
   $$PlaylistTracksTableProcessedTableManager get playlistTracksRefs {
@@ -2628,6 +3073,45 @@ final class $$TracksTableReferences
     ).filter((f) => f.trackId.id.sqlEquals($_itemColumn<int>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_playlistTracksRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$TrackMoodAnalysisTable, List<TrackMoodAnalysi>>
+  _trackMoodAnalysisRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.trackMoodAnalysis,
+        aliasName: 'tracks__id__track_mood_analysis__track_id',
+      );
+
+  $$TrackMoodAnalysisTableProcessedTableManager get trackMoodAnalysisRefs {
+    final manager = $$TrackMoodAnalysisTableTableManager(
+      $_db,
+      $_db.trackMoodAnalysis,
+    ).filter((f) => f.trackId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _trackMoodAnalysisRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$TrackMoodsTable, List<TrackMood>>
+  _trackMoodsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.trackMoods,
+    aliasName: 'tracks__id__track_moods__track_id',
+  );
+
+  $$TrackMoodsTableProcessedTableManager get trackMoodsRefs {
+    final manager = $$TrackMoodsTableTableManager(
+      $_db,
+      $_db.trackMoods,
+    ).filter((f) => f.trackId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_trackMoodsRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -2734,6 +3218,56 @@ class $$TracksTableFilterComposer
           }) => $$PlaylistTracksTableFilterComposer(
             $db: $db,
             $table: $db.playlistTracks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> trackMoodAnalysisRefs(
+    Expression<bool> Function($$TrackMoodAnalysisTableFilterComposer f) f,
+  ) {
+    final $$TrackMoodAnalysisTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.trackMoodAnalysis,
+      getReferencedColumn: (t) => t.trackId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TrackMoodAnalysisTableFilterComposer(
+            $db: $db,
+            $table: $db.trackMoodAnalysis,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> trackMoodsRefs(
+    Expression<bool> Function($$TrackMoodsTableFilterComposer f) f,
+  ) {
+    final $$TrackMoodsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.trackMoods,
+      getReferencedColumn: (t) => t.trackId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TrackMoodsTableFilterComposer(
+            $db: $db,
+            $table: $db.trackMoods,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -2898,6 +3432,57 @@ class $$TracksTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> trackMoodAnalysisRefs<T extends Object>(
+    Expression<T> Function($$TrackMoodAnalysisTableAnnotationComposer a) f,
+  ) {
+    final $$TrackMoodAnalysisTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.trackMoodAnalysis,
+          getReferencedColumn: (t) => t.trackId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$TrackMoodAnalysisTableAnnotationComposer(
+                $db: $db,
+                $table: $db.trackMoodAnalysis,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> trackMoodsRefs<T extends Object>(
+    Expression<T> Function($$TrackMoodsTableAnnotationComposer a) f,
+  ) {
+    final $$TrackMoodsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.trackMoods,
+      getReferencedColumn: (t) => t.trackId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TrackMoodsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.trackMoods,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$TracksTableTableManager
@@ -2913,7 +3498,12 @@ class $$TracksTableTableManager
           $$TracksTableUpdateCompanionBuilder,
           (Track, $$TracksTableReferences),
           Track,
-          PrefetchHooks Function({bool likesRefs, bool playlistTracksRefs})
+          PrefetchHooks Function({
+            bool likesRefs,
+            bool playlistTracksRefs,
+            bool trackMoodAnalysisRefs,
+            bool trackMoodsRefs,
+          })
         > {
   $$TracksTableTableManager(_$AppDatabase db, $TracksTable table)
     : super(
@@ -2976,39 +3566,52 @@ class $$TracksTableTableManager
               ),
           withReferenceMapper: (p0) => p0
               .map(
-                (e) =>
-                    (e.readTable(table), $$TracksTableReferences(db, table, e)),
+                (e) => (
+                  e.readTable<$TracksTable, Track>(table),
+                  $$TracksTableReferences(db, table, e),
+                ),
               )
               .toList(),
           prefetchHooksCallback:
-              ({likesRefs = false, playlistTracksRefs = false}) {
+              ({
+                likesRefs = false,
+                playlistTracksRefs = false,
+                trackMoodAnalysisRefs = false,
+                trackMoodsRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (likesRefs) db.likes,
                     if (playlistTracksRefs) db.playlistTracks,
+                    if (trackMoodAnalysisRefs) db.trackMoodAnalysis,
+                    if (trackMoodsRefs) db.trackMoods,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
                     return [
                       if (likesRefs)
-                        await $_getPrefetchedData<Track, $TracksTable, Like>(
+                        await $_getPrefetchedDataByColumns<
+                          Track,
+                          $TracksTable,
+                          Like,
+                          $LikesTable
+                        >(
                           currentTable: table,
                           referencedTable: $$TracksTableReferences
                               ._likesRefsTable(db),
                           managerFromTypedResult: (p0) =>
                               $$TracksTableReferences(db, table, p0).likesRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.trackId == item.id,
-                              ),
+                          currentColumn: 'id',
+                          referencedColumn: 'track_id',
                           typedResults: items,
                         ),
                       if (playlistTracksRefs)
-                        await $_getPrefetchedData<
+                        await $_getPrefetchedDataByColumns<
                           Track,
                           $TracksTable,
-                          PlaylistTrack
+                          PlaylistTrack,
+                          $PlaylistTracksTable
                         >(
                           currentTable: table,
                           referencedTable: $$TracksTableReferences
@@ -3019,10 +3622,48 @@ class $$TracksTableTableManager
                                 table,
                                 p0,
                               ).playlistTracksRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.trackId == item.id,
-                              ),
+                          currentColumn: 'id',
+                          referencedColumn: 'track_id',
+                          typedResults: items,
+                        ),
+                      if (trackMoodAnalysisRefs)
+                        await $_getPrefetchedDataByColumns<
+                          Track,
+                          $TracksTable,
+                          TrackMoodAnalysi,
+                          $TrackMoodAnalysisTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$TracksTableReferences
+                              ._trackMoodAnalysisRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$TracksTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).trackMoodAnalysisRefs,
+                          currentColumn: 'id',
+                          referencedColumn: 'track_id',
+                          typedResults: items,
+                        ),
+                      if (trackMoodsRefs)
+                        await $_getPrefetchedDataByColumns<
+                          Track,
+                          $TracksTable,
+                          TrackMood,
+                          $TrackMoodsTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$TracksTableReferences
+                              ._trackMoodsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$TracksTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).trackMoodsRefs,
+                          currentColumn: 'id',
+                          referencedColumn: 'track_id',
                           typedResults: items,
                         ),
                     ];
@@ -3045,7 +3686,12 @@ typedef $$TracksTableProcessedTableManager =
       $$TracksTableUpdateCompanionBuilder,
       (Track, $$TracksTableReferences),
       Track,
-      PrefetchHooks Function({bool likesRefs, bool playlistTracksRefs})
+      PrefetchHooks Function({
+        bool likesRefs,
+        bool playlistTracksRefs,
+        bool trackMoodAnalysisRefs,
+        bool trackMoodsRefs,
+      })
     >;
 typedef $$AlbumArtTableCreateCompanionBuilder =
     AlbumArtCompanion Function({
@@ -3162,7 +3808,16 @@ class $$AlbumArtTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$AlbumArtTable, AlbumArtData>(table),
+                  BaseReferences<_$AppDatabase, $AlbumArtTable, AlbumArtData>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -3314,7 +3969,16 @@ class $$ScanFoldersTableTableManager
                 addedAt: addedAt,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$ScanFoldersTable, ScanFolder>(table),
+                  BaseReferences<_$AppDatabase, $ScanFoldersTable, ScanFolder>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -3347,9 +4011,8 @@ final class $$LikesTableReferences
     extends BaseReferences<_$AppDatabase, $LikesTable, Like> {
   $$LikesTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
-  static $TracksTable _trackIdTable(_$AppDatabase db) => db.tracks.createAlias(
-    $_aliasNameGenerator(db.likes.trackId, db.tracks.id),
-  );
+  static $TracksTable _trackIdTable(_$AppDatabase db) =>
+      db.tracks.createAlias('likes__track_id__tracks__id');
 
   $$TracksTableProcessedTableManager get trackId {
     final $_column = $_itemColumn<int>('track_id')!;
@@ -3515,8 +4178,10 @@ class $$LikesTableTableManager
               }) => LikesCompanion.insert(trackId: trackId, likedAt: likedAt),
           withReferenceMapper: (p0) => p0
               .map(
-                (e) =>
-                    (e.readTable(table), $$LikesTableReferences(db, table, e)),
+                (e) => (
+                  e.readTable<$LikesTable, Like>(table),
+                  $$LikesTableReferences(db, table, e),
+                ),
               )
               .toList(),
           prefetchHooksCallback: ({trackId = false}) {
@@ -3598,10 +4263,7 @@ final class $$PlaylistsTableReferences
   static MultiTypedResultKey<$PlaylistTracksTable, List<PlaylistTrack>>
   _playlistTracksRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.playlistTracks,
-    aliasName: $_aliasNameGenerator(
-      db.playlists.id,
-      db.playlistTracks.playlistId,
-    ),
+    aliasName: 'playlists__id__playlist_tracks__playlist_id',
   );
 
   $$PlaylistTracksTableProcessedTableManager get playlistTracksRefs {
@@ -3782,7 +4444,7 @@ class $$PlaylistsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$PlaylistsTable, Playlist>(table),
                   $$PlaylistsTableReferences(db, table, e),
                 ),
               )
@@ -3797,10 +4459,11 @@ class $$PlaylistsTableTableManager
               getPrefetchedDataCallback: (items) async {
                 return [
                   if (playlistTracksRefs)
-                    await $_getPrefetchedData<
+                    await $_getPrefetchedDataByColumns<
                       Playlist,
                       $PlaylistsTable,
-                      PlaylistTrack
+                      PlaylistTrack,
+                      $PlaylistTracksTable
                     >(
                       currentTable: table,
                       referencedTable: $$PlaylistsTableReferences
@@ -3811,8 +4474,8 @@ class $$PlaylistsTableTableManager
                             table,
                             p0,
                           ).playlistTracksRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.playlistId == item.id),
+                      currentColumn: 'id',
+                      referencedColumn: 'playlist_id',
                       typedResults: items,
                     ),
                 ];
@@ -3861,9 +4524,7 @@ final class $$PlaylistTracksTableReferences
   );
 
   static $PlaylistsTable _playlistIdTable(_$AppDatabase db) =>
-      db.playlists.createAlias(
-        $_aliasNameGenerator(db.playlistTracks.playlistId, db.playlists.id),
-      );
+      db.playlists.createAlias('playlist_tracks__playlist_id__playlists__id');
 
   $$PlaylistsTableProcessedTableManager get playlistId {
     final $_column = $_itemColumn<int>('playlist_id')!;
@@ -3879,9 +4540,8 @@ final class $$PlaylistTracksTableReferences
     );
   }
 
-  static $TracksTable _trackIdTable(_$AppDatabase db) => db.tracks.createAlias(
-    $_aliasNameGenerator(db.playlistTracks.trackId, db.tracks.id),
-  );
+  static $TracksTable _trackIdTable(_$AppDatabase db) =>
+      db.tracks.createAlias('playlist_tracks__track_id__tracks__id');
 
   $$TracksTableProcessedTableManager get trackId {
     final $_column = $_itemColumn<int>('track_id')!;
@@ -4147,7 +4807,7 @@ class $$PlaylistTracksTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$PlaylistTracksTable, PlaylistTrack>(table),
                   $$PlaylistTracksTableReferences(db, table, e),
                 ),
               )
@@ -4450,7 +5110,16 @@ class $$PlaybackSessionsTableTableManager
                 updatedAt: updatedAt,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$PlaybackSessionsTable, PlaybackSession>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $PlaybackSessionsTable,
+                    PlaybackSession
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -4589,7 +5258,16 @@ class $$PreferencesTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$PreferencesTable, Preference>(table),
+                  BaseReferences<_$AppDatabase, $PreferencesTable, Preference>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -4613,6 +5291,538 @@ typedef $$PreferencesTableProcessedTableManager =
       Preference,
       PrefetchHooks Function()
     >;
+typedef $$TrackMoodAnalysisTableCreateCompanionBuilder =
+    TrackMoodAnalysisCompanion Function({
+      Value<int> trackId,
+      required String metadataHash,
+    });
+typedef $$TrackMoodAnalysisTableUpdateCompanionBuilder =
+    TrackMoodAnalysisCompanion Function({
+      Value<int> trackId,
+      Value<String> metadataHash,
+    });
+
+final class $$TrackMoodAnalysisTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $TrackMoodAnalysisTable,
+          TrackMoodAnalysi
+        > {
+  $$TrackMoodAnalysisTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $TracksTable _trackIdTable(_$AppDatabase db) =>
+      db.tracks.createAlias('track_mood_analysis__track_id__tracks__id');
+
+  $$TracksTableProcessedTableManager get trackId {
+    final $_column = $_itemColumn<int>('track_id')!;
+
+    final manager = $$TracksTableTableManager(
+      $_db,
+      $_db.tracks,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_trackIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$TrackMoodAnalysisTableFilterComposer
+    extends Composer<_$AppDatabase, $TrackMoodAnalysisTable> {
+  $$TrackMoodAnalysisTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get metadataHash => $composableBuilder(
+    column: $table.metadataHash,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$TracksTableFilterComposer get trackId {
+    final $$TracksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.trackId,
+      referencedTable: $db.tracks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TracksTableFilterComposer(
+            $db: $db,
+            $table: $db.tracks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TrackMoodAnalysisTableOrderingComposer
+    extends Composer<_$AppDatabase, $TrackMoodAnalysisTable> {
+  $$TrackMoodAnalysisTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get metadataHash => $composableBuilder(
+    column: $table.metadataHash,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$TracksTableOrderingComposer get trackId {
+    final $$TracksTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.trackId,
+      referencedTable: $db.tracks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TracksTableOrderingComposer(
+            $db: $db,
+            $table: $db.tracks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TrackMoodAnalysisTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TrackMoodAnalysisTable> {
+  $$TrackMoodAnalysisTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get metadataHash => $composableBuilder(
+    column: $table.metadataHash,
+    builder: (column) => column,
+  );
+
+  $$TracksTableAnnotationComposer get trackId {
+    final $$TracksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.trackId,
+      referencedTable: $db.tracks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TracksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.tracks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TrackMoodAnalysisTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TrackMoodAnalysisTable,
+          TrackMoodAnalysi,
+          $$TrackMoodAnalysisTableFilterComposer,
+          $$TrackMoodAnalysisTableOrderingComposer,
+          $$TrackMoodAnalysisTableAnnotationComposer,
+          $$TrackMoodAnalysisTableCreateCompanionBuilder,
+          $$TrackMoodAnalysisTableUpdateCompanionBuilder,
+          (TrackMoodAnalysi, $$TrackMoodAnalysisTableReferences),
+          TrackMoodAnalysi,
+          PrefetchHooks Function({bool trackId})
+        > {
+  $$TrackMoodAnalysisTableTableManager(
+    _$AppDatabase db,
+    $TrackMoodAnalysisTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TrackMoodAnalysisTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TrackMoodAnalysisTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TrackMoodAnalysisTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> trackId = const Value.absent(),
+                Value<String> metadataHash = const Value.absent(),
+              }) => TrackMoodAnalysisCompanion(
+                trackId: trackId,
+                metadataHash: metadataHash,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> trackId = const Value.absent(),
+                required String metadataHash,
+              }) => TrackMoodAnalysisCompanion.insert(
+                trackId: trackId,
+                metadataHash: metadataHash,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$TrackMoodAnalysisTable, TrackMoodAnalysi>(table),
+                  $$TrackMoodAnalysisTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({trackId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (trackId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.trackId,
+                                referencedTable:
+                                    $$TrackMoodAnalysisTableReferences
+                                        ._trackIdTable(db),
+                                referencedColumn:
+                                    $$TrackMoodAnalysisTableReferences
+                                        ._trackIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$TrackMoodAnalysisTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TrackMoodAnalysisTable,
+      TrackMoodAnalysi,
+      $$TrackMoodAnalysisTableFilterComposer,
+      $$TrackMoodAnalysisTableOrderingComposer,
+      $$TrackMoodAnalysisTableAnnotationComposer,
+      $$TrackMoodAnalysisTableCreateCompanionBuilder,
+      $$TrackMoodAnalysisTableUpdateCompanionBuilder,
+      (TrackMoodAnalysi, $$TrackMoodAnalysisTableReferences),
+      TrackMoodAnalysi,
+      PrefetchHooks Function({bool trackId})
+    >;
+typedef $$TrackMoodsTableCreateCompanionBuilder =
+    TrackMoodsCompanion Function({
+      required int trackId,
+      required String mood,
+      Value<int> rowid,
+    });
+typedef $$TrackMoodsTableUpdateCompanionBuilder =
+    TrackMoodsCompanion Function({
+      Value<int> trackId,
+      Value<String> mood,
+      Value<int> rowid,
+    });
+
+final class $$TrackMoodsTableReferences
+    extends BaseReferences<_$AppDatabase, $TrackMoodsTable, TrackMood> {
+  $$TrackMoodsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $TracksTable _trackIdTable(_$AppDatabase db) =>
+      db.tracks.createAlias('track_moods__track_id__tracks__id');
+
+  $$TracksTableProcessedTableManager get trackId {
+    final $_column = $_itemColumn<int>('track_id')!;
+
+    final manager = $$TracksTableTableManager(
+      $_db,
+      $_db.tracks,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_trackIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$TrackMoodsTableFilterComposer
+    extends Composer<_$AppDatabase, $TrackMoodsTable> {
+  $$TrackMoodsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get mood => $composableBuilder(
+    column: $table.mood,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$TracksTableFilterComposer get trackId {
+    final $$TracksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.trackId,
+      referencedTable: $db.tracks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TracksTableFilterComposer(
+            $db: $db,
+            $table: $db.tracks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TrackMoodsTableOrderingComposer
+    extends Composer<_$AppDatabase, $TrackMoodsTable> {
+  $$TrackMoodsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get mood => $composableBuilder(
+    column: $table.mood,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$TracksTableOrderingComposer get trackId {
+    final $$TracksTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.trackId,
+      referencedTable: $db.tracks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TracksTableOrderingComposer(
+            $db: $db,
+            $table: $db.tracks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TrackMoodsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TrackMoodsTable> {
+  $$TrackMoodsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get mood =>
+      $composableBuilder(column: $table.mood, builder: (column) => column);
+
+  $$TracksTableAnnotationComposer get trackId {
+    final $$TracksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.trackId,
+      referencedTable: $db.tracks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TracksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.tracks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TrackMoodsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TrackMoodsTable,
+          TrackMood,
+          $$TrackMoodsTableFilterComposer,
+          $$TrackMoodsTableOrderingComposer,
+          $$TrackMoodsTableAnnotationComposer,
+          $$TrackMoodsTableCreateCompanionBuilder,
+          $$TrackMoodsTableUpdateCompanionBuilder,
+          (TrackMood, $$TrackMoodsTableReferences),
+          TrackMood,
+          PrefetchHooks Function({bool trackId})
+        > {
+  $$TrackMoodsTableTableManager(_$AppDatabase db, $TrackMoodsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TrackMoodsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TrackMoodsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TrackMoodsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> trackId = const Value.absent(),
+                Value<String> mood = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TrackMoodsCompanion(
+                trackId: trackId,
+                mood: mood,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required int trackId,
+                required String mood,
+                Value<int> rowid = const Value.absent(),
+              }) => TrackMoodsCompanion.insert(
+                trackId: trackId,
+                mood: mood,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$TrackMoodsTable, TrackMood>(table),
+                  $$TrackMoodsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({trackId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (trackId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.trackId,
+                                referencedTable: $$TrackMoodsTableReferences
+                                    ._trackIdTable(db),
+                                referencedColumn: $$TrackMoodsTableReferences
+                                    ._trackIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$TrackMoodsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TrackMoodsTable,
+      TrackMood,
+      $$TrackMoodsTableFilterComposer,
+      $$TrackMoodsTableOrderingComposer,
+      $$TrackMoodsTableAnnotationComposer,
+      $$TrackMoodsTableCreateCompanionBuilder,
+      $$TrackMoodsTableUpdateCompanionBuilder,
+      (TrackMood, $$TrackMoodsTableReferences),
+      TrackMood,
+      PrefetchHooks Function({bool trackId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -4633,4 +5843,8 @@ class $AppDatabaseManager {
       $$PlaybackSessionsTableTableManager(_db, _db.playbackSessions);
   $$PreferencesTableTableManager get preferences =>
       $$PreferencesTableTableManager(_db, _db.preferences);
+  $$TrackMoodAnalysisTableTableManager get trackMoodAnalysis =>
+      $$TrackMoodAnalysisTableTableManager(_db, _db.trackMoodAnalysis);
+  $$TrackMoodsTableTableManager get trackMoods =>
+      $$TrackMoodsTableTableManager(_db, _db.trackMoods);
 }
