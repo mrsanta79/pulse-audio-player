@@ -11,6 +11,8 @@ import '../../features/library/albums_list_screen.dart';
 import '../../features/library/artist_detail_screen.dart';
 import '../../features/library/artists_list_screen.dart';
 import '../../features/library/library_screen.dart';
+import '../../features/library/mood_detail_screen.dart';
+import '../../features/library/moods_list_screen.dart';
 import '../../features/library/songs_list_screen.dart';
 import '../../features/library/year_detail_screen.dart';
 import '../../features/library/years_list_screen.dart';
@@ -86,6 +88,12 @@ List<RouteBase> _fullScreenRoutes() {
     GoRoute(path: Routes.albums, builder: (_, __) => const AlbumsListScreen()),
     GoRoute(path: Routes.years, builder: (_, __) => const YearsListScreen()),
     GoRoute(path: Routes.songs, builder: (_, __) => const SongsListScreen()),
+    GoRoute(path: Routes.moods, builder: (_, __) => const MoodsListScreen()),
+    GoRoute(
+      path: '/mood',
+      builder: (_, state) =>
+          MoodDetailScreen(moodId: state.uri.queryParameters['value'] ?? ''),
+    ),
     GoRoute(
       path: '/album',
       builder: (context, state) => AlbumDetailScreen(

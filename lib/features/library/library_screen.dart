@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/router/routes.dart';
 import '../../core/theme/app_theme.dart';
+import '../../data/moods/mood_catalog.dart';
 import '../../data/repositories/providers.dart';
 import '../../widgets/album_list_tile.dart';
 import '../../widgets/page_header.dart';
@@ -63,6 +64,12 @@ class LibraryScreen extends ConsumerWidget {
               title: 'Songs',
               subtitle: '${tracks.length}',
               onTap: () => context.push(Routes.songs),
+            ),
+            LibraryTile(
+              icon: Icons.mood_rounded,
+              title: 'Mood',
+              subtitle: '${moodCatalog.length} moods',
+              onTap: () => context.push(Routes.moods),
             ),
             const SizedBox(height: 24),
             const Padding(

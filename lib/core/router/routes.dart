@@ -18,6 +18,7 @@ class Routes {
   static const albums = '/library/albums';
   static const years = '/library/years';
   static const songs = '/library/songs';
+  static const moods = '/library/moods';
 
   /// The tabs the bottom nav switches between, in nav order.
   static const shellRoutes = [home, search, library, hotlist];
@@ -31,5 +32,7 @@ String artistRoute(String artist) =>
     '/artist?name=${Uri.encodeComponent(artist)}';
 
 String yearRoute(int year) => '/year?value=$year';
+
+String moodRoute(String mood) => '/mood?value=${Uri.encodeComponent(mood)}';
 
 String playlistRoute(int playlistId) => '/playlist?id=$playlistId';

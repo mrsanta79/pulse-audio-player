@@ -80,6 +80,11 @@ final yearTracksProvider = StreamProvider.autoDispose.family<List<Track>, int>((
   return ref.watch(databaseProvider).watchTracksByYear(year);
 });
 
+final moodTracksProvider = StreamProvider.autoDispose
+    .family<List<Track>, String>((ref, mood) {
+      return ref.watch(databaseProvider).watchTracksByMood(mood);
+    });
+
 final playlistTracksProvider = StreamProvider.autoDispose
     .family<List<Track>, int>((ref, playlistId) {
       return ref.watch(databaseProvider).watchPlaylistTracks(playlistId);
