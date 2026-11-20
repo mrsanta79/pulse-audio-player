@@ -12,6 +12,15 @@ extension LibraryQueries on AppDatabase {
 
   Stream<List<Track>> watchAllTracks() => _allTracks().watch();
 
+  Stream<List<Track>> watchRecentlyAddedTracks({int limit = 50}) =>
+      (select(tracks)
+            ..orderBy([
+              (t) => OrderingTerm.desc(t.addedAt),
+              (t) => OrderingTerm.desc(t.id),
+            ])
+            ..limit(limit))
+          .watch();
+
   SimpleSelectStatement<$TracksTable, Track> _allTracks() {
     return select(tracks)..orderBy([(t) => OrderingTerm.asc(t.title)]);
   }

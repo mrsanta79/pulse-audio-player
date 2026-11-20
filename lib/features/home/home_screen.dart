@@ -12,16 +12,13 @@ import 'widgets/album_shelf.dart';
 import 'widgets/empty_home_state.dart';
 import 'widgets/section_heading.dart';
 
-/// How many recently added songs the Home page lists before "Songs" takes over.
-const _recentSongCount = 20;
-
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final palette = AppColors.of(context);
-    final tracksAsync = ref.watch(allTracksProvider);
+    final tracksAsync = ref.watch(recentlyAddedTracksProvider);
 
     return Scaffold(
       backgroundColor: palette.background,
@@ -46,10 +43,6 @@ class _HomeContent extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final albums = ref.watch(albumsProvider).valueOrNull ?? const [];
-    final recentCount = tracks.length < _recentSongCount
-        ? tracks.length
-        : _recentSongCount;
-
     return CustomScrollView(
       slivers: [
         const SliverToBoxAdapter(child: _HomeHeader()),
@@ -71,15 +64,15 @@ class _HomeContent extends ConsumerWidget {
         ],
         SliverToBoxAdapter(
           child: SectionHeading(
-            title: 'Songs',
-            actionLabel: 'Shuffle all',
+            title: 'Recently added',
+            actionLabel: 'Shuffle recent',
             onAction: () => shuffleAll(ref, tracks),
           ),
         ),
         SliverPadding(
           padding: AppSpacing.listPadding,
           sliver: SliverList.builder(
-            itemCount: recentCount,
+            itemCount: tracks.length,
             // `tracks` is the queue and `index` indexes straight into it, so
             // starting playback doesn't need to search the list for the row.
             itemBuilder: (context, index) =>

@@ -14,6 +14,10 @@ final allTracksProvider = StreamProvider<List<Track>>((ref) {
   return ref.watch(databaseProvider).watchAllTracks();
 });
 
+final recentlyAddedTracksProvider = StreamProvider<List<Track>>((ref) {
+  return ref.watch(databaseProvider).watchRecentlyAddedTracks(limit: 50);
+});
+
 final likedTracksProvider = StreamProvider<List<Track>>((ref) {
   return ref.watch(databaseProvider).watchLikedTracks();
 });
