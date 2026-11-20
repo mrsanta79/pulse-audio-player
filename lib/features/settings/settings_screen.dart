@@ -7,7 +7,10 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/storage_path.dart';
 import '../../data/repositories/providers.dart';
 import '../../data/services/folder_scanner_service.dart';
+import '../../data/services/openrouter_mood_service.dart';
 import 'widgets/appearance_section.dart';
+import 'widgets/mood_ai_section.dart';
+import 'widgets/mood_categorization_progress_bar.dart';
 import 'widgets/music_folders_section.dart';
 import 'widgets/scan_buttons.dart';
 import 'widgets/scan_progress_bar.dart';
@@ -22,14 +25,14 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _scanning = false;
+  bool _categorizing = false;
   ScanProgress? _progress;
+  MoodCategorizationProgress? _moodProgress;
+  String? _moodStatus;
+  bool _moodStatusIsError = false;
   static const _appVersion = String.fromEnvironment(
     'FLUTTER_BUILD_NAME',
-    defaultValue: '1.1.4',
-  );
-  static const _appBuildNumber = String.fromEnvironment(
-    'FLUTTER_BUILD_NUMBER',
-    defaultValue: '3',
+    defaultValue: '1.2.0',
   );
 
   Future<bool> _ensurePermission() async {
@@ -52,6 +55,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  void _showMoodStatus(String message, {bool isError = false}) {
+    if (!mounted) return;
+    setState(() {
+      _moodStatus = message;
+      _moodStatusIsError = isError;
+    });
+    ref.read(moodCategorizationStatusProvider.notifier).state = (
+      message: message,
+      isError: isError,
+    );
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), duration: const Duration(seconds: 8)),
+    );
   }
 
   Future<void> _addFolder() async {
@@ -80,6 +98,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _rescan() async {
+    if (_scanning || _categorizing) return;
     final scanner = ref.read(scannerServiceProvider);
     final folders = await scanner.getScanFolders();
     if (folders.isEmpty) {
@@ -87,20 +106,93 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       return;
     }
 
-    setState(() {
-      _scanning = true;
-      _progress = const ScanProgress(scanned: 0, total: 0);
-    });
-
+    _startMoodOperation(scanning: true);
     final paths = [for (final folder in folders) folder.path];
-    await for (final progress in scanner.scanFolders(paths)) {
+    try {
+      await for (final progress in scanner.scanFolders(paths)) {
+        if (!mounted) return;
+        setState(() => _progress = progress);
+      }
+    } catch (error) {
       if (!mounted) return;
-      setState(() => _progress = progress);
+      setState(() => _scanning = false);
+      _showMessage('Library scan failed: $error');
+      return;
     }
 
+    await _categorizeMoods();
+  }
+
+  void _startMoodOperation({bool scanning = false}) {
+    setState(() {
+      _scanning = scanning;
+      _categorizing = false;
+      _progress = scanning ? const ScanProgress(scanned: 0, total: 0) : null;
+      _moodProgress = const MoodCategorizationProgress(completed: 0, total: 0);
+      _moodStatus = null;
+      _moodStatusIsError = false;
+    });
+    ref.read(moodCategorizationStatusProvider.notifier).state = null;
+  }
+
+  Future<void> _categorizeMoodsOnly() async {
+    if (_scanning || _categorizing) return;
+    final tracks = await ref.read(allTracksProvider.future);
+    if (tracks.isEmpty) {
+      _showMoodStatus('There are no songs in your library to categorize.');
+      return;
+    }
+    _startMoodOperation();
+    await _categorizeMoods();
+  }
+
+  Future<void> _categorizeMoods() async {
     if (!mounted) return;
-    setState(() => _scanning = false);
-    _showMessage('Scan complete, ${_progress?.scanned ?? 0} files processed');
+    setState(() {
+      _scanning = false;
+      _categorizing = true;
+      _moodProgress = const MoodCategorizationProgress(completed: 0, total: 0);
+    });
+
+    final scanner = ref.read(scannerServiceProvider);
+    var skipped = false;
+    try {
+      await for (final progress in scanner.categorizePendingMoods()) {
+        if (!mounted) return;
+        skipped = progress.skipped;
+        setState(() => _moodProgress = progress);
+      }
+      if (!mounted) return;
+      final result = _moodProgress;
+      setState(() {
+        _categorizing = false;
+        _moodProgress = null;
+      });
+      if (skipped) {
+        _showMoodStatus(
+          'Mood categorization skipped: add an OpenRouter API key below, then try again.',
+          isError: true,
+        );
+      } else if (result?.total == 0) {
+        _showMoodStatus(
+          'Mood categorization complete: all songs are up to date.',
+        );
+      } else {
+        _showMoodStatus(
+          'Mood categorization complete: ${result?.completed ?? 0} songs categorized.',
+        );
+      }
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _categorizing = false;
+        _moodProgress = null;
+      });
+      _showMoodStatus(
+        'Mood categorization failed: $error. Save/check your OpenRouter settings, then try again.',
+        isError: true,
+      );
+    }
   }
 
   @override
@@ -135,18 +227,56 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           const SizedBox(height: 16),
           ScanButtons(
-            scanning: _scanning,
+            scanning: _scanning || _categorizing,
             onAddFolder: _addFolder,
             onRescan: _rescan,
+            onCategorizeMoods: _categorizeMoodsOnly,
           ),
           if (_scanning) ScanProgressBar(progress: _progress),
+          if (_categorizing)
+            MoodCategorizationProgressBar(progress: _moodProgress),
+          if (_moodStatus != null) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: _moodStatusIsError
+                    ? Theme.of(context).colorScheme.errorContainer
+                    : palette.surface,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _moodStatus!,
+                      style: TextStyle(
+                        color: _moodStatusIsError
+                            ? Theme.of(context).colorScheme.onErrorContainer
+                            : palette.textPrimary,
+                      ),
+                    ),
+                  ),
+                  if (_moodStatusIsError)
+                    TextButton(onPressed: _rescan, child: const Text('Retry')),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: AppSpacing.section + 8),
+          const SettingsSection(
+            title: 'Mood categories',
+            description:
+                'Use OpenRouter to sort songs into moods after a library scan. Title, artist, album, year, duration, and track number are sent for categorization.',
+            child: MoodAiSection(),
+          ),
           const SizedBox(height: 32),
           SettingsSection(
             title: 'About',
             description:
-                'Pulse - A dead-simple fully vibe-coded completely free & offline audio player to break free from the shackles of streaming services and their algorithms.',
+                'Pulse keeps playback and library data on your device. Optional Mood AI uses OpenRouter to categorize song metadata.',
             child: Text(
-              'Version $_appVersion ($_appBuildNumber)',
+              'Version $_appVersion',
               style: TextStyle(color: palette.textSecondary, fontSize: 13),
             ),
           ),
