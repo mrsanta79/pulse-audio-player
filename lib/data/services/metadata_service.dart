@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import 'package:audiotags/audiotags.dart';
+import 'package:media_metadata/media_metadata.dart';
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 
@@ -31,41 +31,32 @@ class MetadataService {
   Future<TrackMetadata> read(String filePath) async {
     final fileName = p.basenameWithoutExtension(filePath);
     try {
-      final tag = await AudioTags.read(filePath);
-      if (tag == null) {
+      final metadata = await MediaMetadata.read(filePath);
+      if (metadata == null) {
         return TrackMetadata(
           title: fileName,
           artist: unknownArtist,
           album: unknownAlbum,
         );
       }
+      final picture = metadata.imageMetadata;
 
-      final pictures = tag.pictures;
-      Uint8List? art;
-      if (pictures.isNotEmpty) {
-        art = Uint8List.fromList(pictures.first.bytes);
+      String valueOr(String? value, String fallback) {
+        final trimmed = value?.trim();
+        return trimmed == null || trimmed.isEmpty ? fallback : trimmed;
       }
 
-      final title = (tag.title?.trim().isNotEmpty ?? false)
-          ? tag.title!.trim()
-          : fileName;
-      final artist = (tag.trackArtist?.trim().isNotEmpty ?? false)
-          ? tag.trackArtist!.trim()
-          : ((tag.albumArtist?.trim().isNotEmpty ?? false)
-                ? tag.albumArtist!.trim()
-                : unknownArtist);
-      final album = (tag.album?.trim().isNotEmpty ?? false)
-          ? tag.album!.trim()
-          : unknownAlbum;
-
       return TrackMetadata(
-        title: title,
-        artist: artist,
-        album: album,
-        year: tag.year,
-        durationMs: tag.duration != null ? tag.duration! * 1000 : null,
-        trackNumber: tag.trackNumber,
-        albumArt: art,
+        title: valueOr(metadata.title, fileName),
+        artist: valueOr(
+          metadata.artist,
+          valueOr(metadata.albumArtist, unknownArtist),
+        ),
+        album: valueOr(metadata.album, unknownAlbum),
+        year: metadata.year,
+        durationMs: metadata.duration?.inMilliseconds,
+        trackNumber: metadata.trackNumber,
+        albumArt: picture?.data,
       );
     } catch (_) {
       return TrackMetadata(

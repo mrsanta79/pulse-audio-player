@@ -23,6 +23,14 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _scanning = false;
   ScanProgress? _progress;
+  static const _appVersion = String.fromEnvironment(
+    'FLUTTER_BUILD_NAME',
+    defaultValue: '1.1.4',
+  );
+  static const _appBuildNumber = String.fromEnvironment(
+    'FLUTTER_BUILD_NUMBER',
+    defaultValue: '3',
+  );
 
   Future<bool> _ensurePermission() async {
     // Reading arbitrary folders by filesystem path on Android 11+ requires
@@ -133,10 +141,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           if (_scanning) ScanProgressBar(progress: _progress),
           const SizedBox(height: 32),
-          const SettingsSection(
+          SettingsSection(
             title: 'About',
             description:
                 'Pulse - A dead-simple fully vibe-coded completely free & offline audio player to break free from the shackles of streaming services and their algorithms.',
+            child: Text(
+              'Version $_appVersion ($_appBuildNumber)',
+              style: TextStyle(color: palette.textSecondary, fontSize: 13),
+            ),
           ),
         ],
       ),
