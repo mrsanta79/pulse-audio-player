@@ -23,10 +23,25 @@ class ScanProgress {
 }
 
 class FolderScannerService {
-  FolderScannerService(this._db, this._metadata);
+  FolderScannerService(this._db, this._metadata, [this._moods]);
 
   final AppDatabase _db;
   final MetadataService _metadata;
+  final OpenRouterMoodService? _moods;
+
+  Stream<MoodCategorizationProgress> categorizePendingMoods() async* {
+    final moods = _moods;
+    if (moods == null) {
+      yield const MoodCategorizationProgress(
+        completed: 0,
+        total: 0,
+        done: true,
+        skipped: true,
+      );
+      return;
+    }
+    yield* moods.categorizePending();
+  }
 
   static const audioExtensions = {
     '.mp3',

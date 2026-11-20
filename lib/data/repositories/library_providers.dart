@@ -47,6 +47,13 @@ final yearsProvider = FutureProvider<List<int>>((ref) async {
   return ref.watch(databaseProvider).getYears();
 });
 
+final moodCountsProvider = StreamProvider<List<MoodCount>>((ref) {
+  return ref.watch(databaseProvider).watchMoodCounts();
+});
+
+final moodCategorizationStatusProvider =
+    StateProvider<({String message, bool isError})?>((ref) => null);
+
 // Detail-screen track lists.
 //
 // These are streams rather than futures started from `build`: a `FutureBuilder`
